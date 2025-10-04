@@ -6,9 +6,12 @@ from app.models import Colaborador, Servico
 router = APIRouter()
 
 # Colaborador Endpoints
-@router.post("/colaboradores/", response_model=Colaborador)
+@router.post("/colaboradores/", response_model=Colaborador, status_code=201)
 def create_colaborador_endpoint(colaborador: Colaborador):
-    return crud.create_colaborador(colaborador)
+    try:
+        return crud.create_colaborador(colaborador)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.get("/colaboradores/", response_model=List[Colaborador])
 def read_colaboradores_endpoint():
@@ -23,10 +26,13 @@ def read_colaborador_endpoint(colaborador_id: int):
 
 @router.put("/colaboradores/{colaborador_id}", response_model=Colaborador)
 def update_colaborador_endpoint(colaborador_id: int, colaborador: Colaborador):
-    updated_colaborador = crud.update_colaborador(colaborador_id, colaborador)
-    if updated_colaborador is None:
-        raise HTTPException(status_code=404, detail="Colaborador not found")
-    return updated_colaborador
+    try:
+        updated_colaborador = crud.update_colaborador(colaborador_id, colaborador)
+        if updated_colaborador is None:
+            raise HTTPException(status_code=404, detail="Colaborador not found")
+        return updated_colaborador
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.delete("/colaboradores/{colaborador_id}", response_model=dict)
 def delete_colaborador_endpoint(colaborador_id: int):
@@ -36,9 +42,12 @@ def delete_colaborador_endpoint(colaborador_id: int):
     return result
 
 # Servico Endpoints
-@router.post("/servicos/", response_model=Servico)
+@router.post("/servicos/", response_model=Servico, status_code=201)
 def create_servico_endpoint(servico: Servico):
-    return crud.create_servico(servico)
+    try:
+        return crud.create_servico(servico)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.get("/servicos/", response_model=List[Servico])
 def read_servicos_endpoint():
@@ -53,10 +62,13 @@ def read_servico_endpoint(servico_id: int):
 
 @router.put("/servicos/{servico_id}", response_model=Servico)
 def update_servico_endpoint(servico_id: int, servico: Servico):
-    updated_servico = crud.update_servico(servico_id, servico)
-    if updated_servico is None:
-        raise HTTPException(status_code=404, detail="Servico not found")
-    return updated_servico
+    try:
+        updated_servico = crud.update_servico(servico_id, servico)
+        if updated_servico is None:
+            raise HTTPException(status_code=404, detail="Servico not found")
+        return updated_servico
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.delete("/servicos/{servico_id}", response_model=dict)
 def delete_servico_endpoint(servico_id: int):
