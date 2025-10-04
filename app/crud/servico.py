@@ -11,12 +11,8 @@ def create_servico(servico: Servico) -> Servico:
     # Check for overlapping services of the same type
     for existing_servico in all_servicos:
         if existing_servico.tipoServico == servico.tipoServico:
-            # Define effective end dates (using date.max for open-ended services)
-            new_end = servico.dataFim if servico.dataFim else date.max
-            existing_end = existing_servico.dataFim if existing_servico.dataFim else date.max
-
             # Overlap check: (StartA <= EndB) and (EndA >= StartB)
-            if servico.dataInicio <= existing_end and new_end >= existing_servico.dataInicio:
+            if servico.dataInicio <= existing_servico.dataFim and servico.dataFim >= existing_servico.dataInicio:
                 raise ValueError(
                     f"Serviço do tipo '{servico.tipoServico}' já existe em um período sobreposto."
                 )
@@ -28,7 +24,7 @@ def create_servico(servico: Servico) -> Servico:
         servico.tipoServico,
         str(servico.valor),
         servico.dataInicio.isoformat(),
-        servico.dataFim.isoformat() if servico.dataFim else ""
+        servico.dataFim.isoformat()
     ]
     sheet.append_row(row_data)
     return servico
@@ -38,9 +34,10 @@ def get_servicos() -> List[Servico]:
     records = sheet.get_all_records()
     servicos = []
     for record in records:
-        record['dataFim'] = _parse_date(record.get('dataFim', ''))
         record['dataInicio'] = _parse_date(record.get('dataInicio', ''))
-        if record.get('id') and record.get('tipoServico'): # Basic data integrity check
+        record['dataFim'] = _parse_date(record.get('dataFim', ''))
+        # Basic data integrity check, ensure required fields are present
+        if all(record.get(key) for key in ['id', 'tipoServico', 'valor', 'dataInicio', 'dataFim']):
             servicos.append(Servico(**record))
     return servicos
 
@@ -59,10 +56,9 @@ def update_servico(servico_id: int, servico: Servico) -> Optional[Servico]:
 
     all_servicos = get_servicos()
     for existing in all_servicos:
+        # Check for conflicts with *other* services
         if existing.tipoServico == servico.tipoServico and existing.id != servico_id:
-            new_end = servico.dataFim if servico.dataFim else date.max
-            existing_end = existing.dataFim if existing.dataFim else date.max
-            if servico.dataInicio <= existing_end and new_end >= existing.dataInicio:
+            if servico.dataInicio <= existing.dataFim and servico.dataFim >= existing.dataInicio:
                  raise ValueError(f"A atualização causa sobreposição de datas para o serviço '{servico.tipoServico}'.")
 
     row_number = cell.row
@@ -72,7 +68,7 @@ def update_servico(servico_id: int, servico: Servico) -> Optional[Servico]:
         servico.tipoServico,
         str(servico.valor),
         servico.dataInicio.isoformat(),
-        servico.dataFim.isoformat() if servico.dataFim else ""
+        servico.dataFim.isoformat()
     ]
     sheet.update(f'A{row_number}:E{row_number}', [row_data])
     return servico

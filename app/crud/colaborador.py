@@ -11,12 +11,8 @@ def create_colaborador(colaborador: Colaborador) -> Colaborador:
     # Check for existing CPF with overlapping dates
     for existing in all_colaboradores:
         if existing.cpf == colaborador.cpf:
-            # Define effective end dates (using date.max for open-ended periods)
-            new_end = colaborador.dataFim if colaborador.dataFim else date.max
-            existing_end = existing.dataFim if existing.dataFim else date.max
-
             # Overlap check: (StartA <= EndB) and (EndA >= StartB)
-            if colaborador.dataInicio <= existing_end and new_end >= existing.dataInicio:
+            if colaborador.dataInicio <= existing.dataFim and colaborador.dataFim >= existing.dataInicio:
                 raise ValueError(
                     f"Colaborador com CPF {colaborador.cpf} já possui um cadastro ativo no período informado."
                 )
@@ -31,7 +27,7 @@ def create_colaborador(colaborador: Colaborador) -> Colaborador:
         colaborador.chavePix,
         str(colaborador.percentualComissao),
         colaborador.dataInicio.isoformat(),
-        colaborador.dataFim.isoformat() if colaborador.dataFim else ""
+        colaborador.dataFim.isoformat()
     ]
     sheet.append_row(row_data)
     return colaborador
@@ -41,11 +37,10 @@ def get_colaboradores() -> List[Colaborador]:
     records = sheet.get_all_records()
     colaboradores = []
     for record in records:
-        # Handle potential empty strings for optional date fields
-        record['dataFim'] = _parse_date(record.get('dataFim', ''))
         record['dataInicio'] = _parse_date(record.get('dataInicio', ''))
-        # Basic data integrity check
-        if record.get('id') and record.get('nome') and record.get('cpf') and record.get('percentualComissao') is not None:
+        record['dataFim'] = _parse_date(record.get('dataFim', ''))
+        # Basic data integrity check, ensure required fields are present
+        if all(record.get(key) for key in ['id', 'nome', 'cpf', 'percentualComissao', 'dataInicio', 'dataFim']):
             colaboradores.append(Colaborador(**record))
     return colaboradores
 
@@ -66,10 +61,7 @@ def update_colaborador(colaborador_id: int, colaborador: Colaborador) -> Optiona
     for existing in all_colaboradores:
         # Check for conflicts with *other* collaborators
         if existing.cpf == colaborador.cpf and existing.id != colaborador_id:
-            new_end = colaborador.dataFim if colaborador.dataFim else date.max
-            existing_end = existing.dataFim if existing.dataFim else date.max
-
-            if colaborador.dataInicio <= existing_end and new_end >= existing.dataInicio:
+            if colaborador.dataInicio <= existing.dataFim and colaborador.dataFim >= existing.dataInicio:
                 raise ValueError(
                     f"A atualização conflita com um cadastro existente para o CPF {colaborador.cpf} no período informado."
                 )
@@ -83,7 +75,7 @@ def update_colaborador(colaborador_id: int, colaborador: Colaborador) -> Optiona
         colaborador.chavePix,
         str(colaborador.percentualComissao),
         colaborador.dataInicio.isoformat(),
-        colaborador.dataFim.isoformat() if colaborador.dataFim else ""
+        colaborador.dataFim.isoformat()
     ]
     sheet.update(f'A{row_number}:G{row_number}', [row_data])
     return colaborador
