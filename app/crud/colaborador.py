@@ -6,12 +6,20 @@ from app.crud.utils import get_next_id, _parse_date
 
 def create_colaborador(colaborador: Colaborador) -> Colaborador:
     sheet = get_colaboradores_sheet()
-
-    # Check for existing CPF
     all_colaboradores = get_colaboradores()
+
+    # Check for existing CPF with overlapping dates
     for existing in all_colaboradores:
         if existing.cpf == colaborador.cpf:
-            raise ValueError(f"Colaborador com CPF {colaborador.cpf} já existe.")
+            # Define effective end dates (using date.max for open-ended periods)
+            new_end = colaborador.dataFim if colaborador.dataFim else date.max
+            existing_end = existing.dataFim if existing.dataFim else date.max
+
+            # Overlap check: (StartA <= EndB) and (EndA >= StartB)
+            if colaborador.dataInicio <= existing_end and new_end >= existing.dataInicio:
+                raise ValueError(
+                    f"Colaborador com CPF {colaborador.cpf} já possui um cadastro ativo no período informado."
+                )
 
     next_id = get_next_id(sheet)
     colaborador.id = next_id
@@ -56,8 +64,15 @@ def update_colaborador(colaborador_id: int, colaborador: Colaborador) -> Optiona
 
     all_colaboradores = get_colaboradores()
     for existing in all_colaboradores:
+        # Check for conflicts with *other* collaborators
         if existing.cpf == colaborador.cpf and existing.id != colaborador_id:
-            raise ValueError(f"Outro colaborador já possui o CPF {colaborador.cpf}.")
+            new_end = colaborador.dataFim if colaborador.dataFim else date.max
+            existing_end = existing.dataFim if existing.dataFim else date.max
+
+            if colaborador.dataInicio <= existing_end and new_end >= existing.dataInicio:
+                raise ValueError(
+                    f"A atualização conflita com um cadastro existente para o CPF {colaborador.cpf} no período informado."
+                )
 
     row_number = cell.row
     colaborador.id = colaborador_id
