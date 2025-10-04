@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import router
+from app.routers import colaborador, servico
 
 app = FastAPI(
     title="Google Sheets CRUD API",
@@ -7,7 +7,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.include_router(router, prefix="/api", tags=["api"])
+# Include the routers from the separated files
+app.include_router(colaborador.router, prefix="/api")
+app.include_router(servico.router, prefix="/api")
 
 @app.get("/")
 def read_root():
