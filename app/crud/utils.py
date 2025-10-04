@@ -13,10 +13,10 @@ def get_next_id(sheet: gspread.Worksheet) -> int:
 
 def _parse_date(date_str: str) -> Optional[date]:
     """Helper to parse date strings from sheet, returning None if empty."""
-    if not date_str:
+    if not date_str or not isinstance(date_str, str):
         return None
     try:
-        # Assumes date is in ISO format YYYY-MM-DD
-        return datetime.strptime(date_str, '%Y-%m-%d').date()
+        # Assumes date is in DD/MM/YYYY format
+        return datetime.strptime(date_str, '%d/%m/%Y').date()
     except (ValueError, TypeError):
         return None

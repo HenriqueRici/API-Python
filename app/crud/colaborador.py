@@ -26,8 +26,8 @@ def create_colaborador(colaborador: Colaborador) -> Colaborador:
         colaborador.cpf,
         colaborador.chavePix,
         str(colaborador.percentualComissao),
-        colaborador.dataInicio.isoformat(),
-        colaborador.dataFim.isoformat()
+        colaborador.dataInicio.strftime('%d/%m/%Y'),
+        colaborador.dataFim.strftime('%d/%m/%Y')
     ]
     sheet.append_row(row_data)
     return colaborador
@@ -37,11 +37,27 @@ def get_colaboradores() -> List[Colaborador]:
     records = sheet.get_all_records()
     colaboradores = []
     for record in records:
-        record['dataInicio'] = _parse_date(record.get('dataInicio', ''))
-        record['dataFim'] = _parse_date(record.get('dataFim', ''))
-        # Basic data integrity check, ensure required fields are present
-        if all(record.get(key) for key in ['id', 'nome', 'cpf', 'percentualComissao', 'dataInicio', 'dataFim']):
-            colaboradores.append(Colaborador(**record))
+        try:
+            # Build a dictionary with correct types for Pydantic model creation.
+            data_to_validate = {
+                'id': int(record['id']),
+                'nome': record['nome'],
+                'cpf': record['cpf'],
+                'chavePix': record['chavePix'],
+                'percentualComissao': float(record['percentualComissao']),
+                'dataInicio': _parse_date(record.get('dataInicio')),
+                'dataFim': _parse_date(record.get('dataFim')),
+            }
+
+            # After parsing, ensure date fields (now mandatory) are not None before creating the model.
+            if not data_to_validate['dataInicio'] or not data_to_validate['dataFim']:
+                continue
+
+            colaboradores.append(Colaborador(**data_to_validate))
+        except (ValueError, TypeError, KeyError):
+            # If any required field is missing or has a wrong type,
+            # safely skip this row and continue processing others.
+            continue
     return colaboradores
 
 def get_colaborador_by_id(colaborador_id: int) -> Optional[Colaborador]:
@@ -74,8 +90,8 @@ def update_colaborador(colaborador_id: int, colaborador: Colaborador) -> Optiona
         colaborador.cpf,
         colaborador.chavePix,
         str(colaborador.percentualComissao),
-        colaborador.dataInicio.isoformat(),
-        colaborador.dataFim.isoformat()
+        colaborador.dataInicio.strftime('%d/%m/%Y'),
+        colaborador.dataFim.strftime('%d/%m/%Y')
     ]
     sheet.update(f'A{row_number}:G{row_number}', [row_data])
     return colaborador

@@ -23,8 +23,8 @@ def create_servico(servico: Servico) -> Servico:
         str(servico.id),
         servico.tipoServico,
         str(servico.valor),
-        servico.dataInicio.isoformat(),
-        servico.dataFim.isoformat()
+        servico.dataInicio.strftime('%d/%m/%Y'),
+        servico.dataFim.strftime('%d/%m/%Y')
     ]
     sheet.append_row(row_data)
     return servico
@@ -34,11 +34,25 @@ def get_servicos() -> List[Servico]:
     records = sheet.get_all_records()
     servicos = []
     for record in records:
-        record['dataInicio'] = _parse_date(record.get('dataInicio', ''))
-        record['dataFim'] = _parse_date(record.get('dataFim', ''))
-        # Basic data integrity check, ensure required fields are present
-        if all(record.get(key) for key in ['id', 'tipoServico', 'valor', 'dataInicio', 'dataFim']):
-            servicos.append(Servico(**record))
+        try:
+            # Build a dictionary with correct types for Pydantic model creation.
+            data_to_validate = {
+                'id': int(record['id']),
+                'tipoServico': record['tipoServico'],
+                'valor': float(record['valor']),
+                'dataInicio': _parse_date(record.get('dataInicio')),
+                'dataFim': _parse_date(record.get('dataFim')),
+            }
+
+            # After parsing, ensure date fields (now mandatory) are not None.
+            if not data_to_validate['dataInicio'] or not data_to_validate['dataFim']:
+                continue
+
+            servicos.append(Servico(**data_to_validate))
+        except (ValueError, TypeError, KeyError):
+            # If any required field is missing or has a wrong type,
+            # safely skip this row and continue processing others.
+            continue
     return servicos
 
 def get_servico_by_id(servico_id: int) -> Optional[Servico]:
@@ -67,8 +81,8 @@ def update_servico(servico_id: int, servico: Servico) -> Optional[Servico]:
         str(servico.id),
         servico.tipoServico,
         str(servico.valor),
-        servico.dataInicio.isoformat(),
-        servico.dataFim.isoformat()
+        servico.dataInicio.strftime('%d/%m/%Y'),
+        servico.dataFim.strftime('%d/%m/%Y')
     ]
     sheet.update(f'A{row_number}:E{row_number}', [row_data])
     return servico
