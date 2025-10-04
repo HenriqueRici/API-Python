@@ -21,6 +21,7 @@ def create_colaborador(colaborador: Colaborador) -> Colaborador:
         colaborador.nome,
         colaborador.cpf,
         colaborador.chavePix,
+        str(colaborador.percentualComissao),
         colaborador.dataInicio.isoformat(),
         colaborador.dataFim.isoformat() if colaborador.dataFim else ""
     ]
@@ -35,7 +36,8 @@ def get_colaboradores() -> List[Colaborador]:
         # Handle potential empty strings for optional date fields
         record['dataFim'] = _parse_date(record.get('dataFim', ''))
         record['dataInicio'] = _parse_date(record.get('dataInicio', ''))
-        if record.get('id') and record.get('nome') and record.get('cpf'): # Basic data integrity check
+        # Basic data integrity check
+        if record.get('id') and record.get('nome') and record.get('cpf') and record.get('percentualComissao') is not None:
             colaboradores.append(Colaborador(**record))
     return colaboradores
 
@@ -64,10 +66,11 @@ def update_colaborador(colaborador_id: int, colaborador: Colaborador) -> Optiona
         colaborador.nome,
         colaborador.cpf,
         colaborador.chavePix,
+        str(colaborador.percentualComissao),
         colaborador.dataInicio.isoformat(),
         colaborador.dataFim.isoformat() if colaborador.dataFim else ""
     ]
-    sheet.update(f'A{row_number}:F{row_number}', [row_data])
+    sheet.update(f'A{row_number}:G{row_number}', [row_data])
     return colaborador
 
 def delete_colaborador(colaborador_id: int) -> Optional[dict]:

@@ -7,6 +7,7 @@ class Colaborador(BaseModel):
     nome: str
     cpf: str
     chavePix: str
+    percentualComissao: float
     dataInicio: date
     dataFim: Optional[date] = None
 

@@ -50,7 +50,7 @@ def get_colaboradores_sheet():
         return spreadsheet.worksheet("Colaboradores")
     except gspread.exceptions.WorksheetNotFound:
         worksheet = spreadsheet.add_worksheet(title="Colaboradores", rows="100", cols="20")
-        worksheet.append_row(["id", "nome", "cpf", "chavePix", "dataInicio", "dataFim"])
+        worksheet.append_row(["id", "nome", "cpf", "chavePix", "percentualComissao", "dataInicio", "dataFim"])
         return worksheet
 
 def get_servicos_sheet():
