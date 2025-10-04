@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+gspread
+python-dotenv
+oauth2client
+gspread-dataframe
